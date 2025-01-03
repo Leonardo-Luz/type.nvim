@@ -14,7 +14,14 @@
 **Installation:**  Add `leonardo-luz/type.nvim` to your Neovim plugin manager (e.g., `init.lua` or `plugins/type.lua`).
 
 ```lua
-{ 'leonardo-luz/type.nvim' }
+{ 
+    'leonardo-luz/type.nvim',
+    opts = {},
+    -- OR
+    opts = {
+        words = 20,
+    },
+}
 ```
 
 **Usage:**
