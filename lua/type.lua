@@ -15,96 +15,79 @@ local state = {
   wpm = 0,
 }
 
-local lorem_ipsum = {
-  "lorem",
-  "ipsum",
-  "dolor",
-  "sit",
-  "amet",
-  "consectetur",
-  "adipiscing",
-  "elit",
-  "sed",
-  "do",
-  "eiusmod",
-  "tempor",
-  "incididunt",
-  "ut",
-  "labore",
-  "et",
-  "dolore",
-  "magna",
-  "aliqua",
-  "ut",
-  "enim",
-  "ad",
-  "minim",
-  "veniam",
-  "quis",
-  "nostrud",
-  "exercitation",
-  "ullamco",
-  "laboris",
-  "nisi",
-  "ut",
-  "aliquip",
-  "ex",
-  "ea",
-  "commodo",
-  "consequat",
-  "duis",
-  "aute",
-  "irure",
-  "dolor",
+local random_words = {
+  "apple",
+  "banana",
+  "cherry",
+  "date",
+  "elderberry",
+  "fig",
+  "grape",
+  "honeydew",
+  "kiwi",
+  "lemon",
+  "mango",
+  "nectarine",
+  "orange",
+  "car",
+  "bike",
+  "house",
+  "tree",
+  "flower",
+  "computer",
+  "book",
+  "pen",
+  "pencil",
+  "paper",
+  "scissors",
+  "stapler",
+  "ruler",
+  "eraser",
+  "crayon",
+  "marker",
+  "paint",
+  "and",
+  "the",
+  "a",
+  "on",
   "in",
-  "reprehenderit",
-  "in",
-  "voluptate",
-  "velit",
-  "esse",
-  "cillum",
-  "dolore",
-  "eu",
-  "fugiat",
-  "nulla",
-  "pariatur",
-  "excepteur",
-  "sint",
-  "occaecat",
-  "cupidatat",
-  "non",
-  "proident",
-  "sunt",
-  "in",
-  "culpa",
-  "qui",
-  "officia",
-  "deserunt",
-  "mollit",
-  "anim",
-  "id",
-  "est",
-  "laborum",
+  "to",
+  "of",
+  "is",
+  "are",
+  "for",
+  "run",
+  "jump",
+  "walk",
+  "talk",
+  "sing",
+  "dance",
+  "read",
+  "write",
+  "eat",
+  "sleep",
 }
 
-local function generate_lorem_ipsum(word_count)
+local function generate_random_text(word_count)
   local text = {}
   for i = 1, word_count do
-    local random_index = math.random(1, #lorem_ipsum)
-    table.insert(text, lorem_ipsum[random_index])
-    table.insert(state.text, lorem_ipsum[random_index])
+    local random_index = math.random(1, #random_words)
+    table.insert(text, random_words[random_index])
+    table.insert(state.text, random_words[random_index])
 
     if i % 10 == 0 then
       table.insert(text, "\n")
+    else
+      table.insert(text, " ")
     end
   end
-  return table.concat(text, " ")
+  return table.concat(text, "")
 end
 
 local setup_type = function()
   state.text = {}
 
-  local text = generate_lorem_ipsum(state.words)
+  local text = generate_random_text(state.words)
 
   local lines = vim.split(text, "\n")
 
@@ -112,9 +95,9 @@ local setup_type = function()
     "  current word: %s   |   wpm  %d   |   ✔ %d / ✘ %d   |   🔥  %d  ",
     state.text[state.current_word],
     state.wpm,
-    state.streak,
     state.correct_words,
-    state.wrong_words
+    state.wrong_words,
+    state.streak
   )
 
   vim.api.nvim_buf_set_lines(questionnaire.state.window_style.footer.floating.buf, 0, -1, false, { footer })
@@ -195,5 +178,14 @@ end
 vim.api.nvim_create_user_command("Type", function()
   start_type()
 end, {})
+
+---@class setup.Opts
+---@field words integer: Set challenge size. Default 20
+
+---Setup type plugin
+---@param opts setup.Opts
+M.setup = function(opts)
+  state.words = opts.words or state.words
+end
 
 return M
