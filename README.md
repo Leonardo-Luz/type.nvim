@@ -1,4 +1,4 @@
-## type.nvim [WIP]
+## type.nvim
 
 *A Neovim Plugin for Typing Practice*
 

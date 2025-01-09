@@ -13,6 +13,7 @@ local state = {
   start_timer = 0,
   end_timer = 0,
   wpm = 0,
+  text_start = "",
 }
 
 local random_words = {
@@ -70,6 +71,8 @@ local random_words = {
 
 local function generate_random_text(word_count)
   local text = {}
+  state.text = {}
+
   for i = 1, word_count do
     local random_index = math.random(1, #random_words)
     table.insert(text, random_words[random_index])
@@ -84,10 +87,18 @@ local function generate_random_text(word_count)
   return table.concat(text, "")
 end
 
-local setup_type = function()
-  state.text = {}
+local setup_type = function(text)
+  local size = 0
+  for i = 1, state.current_word do
+    size = size + state.text[i]:len() + 1
+  end
 
-  local text = generate_random_text(state.words)
+  local text_end = ""
+  if state.current_word < state.words then
+    text_end = text:sub(size, text:len())
+  end
+
+  text = state.text_start .. "`" .. state.text[state.current_word] .. "`" .. text_end
 
   local lines = vim.split(text, "\n")
 
@@ -116,7 +127,10 @@ local start_type = function()
   questionnaire.state.title = "Type Test"
   questionnaire.window_setup()
 
-  setup_type()
+  vim.bo[questionnaire.state.window_style.question.floating.buf].filetype = "markdown"
+
+  local text = generate_random_text(state.words)
+  setup_type(text)
 
   vim.keymap.set("n", "<bs>", function()
     if state.current_word > 1 then
@@ -131,6 +145,7 @@ local start_type = function()
         state.streak
       )
       vim.api.nvim_buf_set_lines(questionnaire.state.window_style.footer.floating.buf, 0, -1, false, { footer })
+      setup_type(text)
     end
   end, { buffer = questionnaire.state.window_style.answear.floating.buf })
 
@@ -154,7 +169,9 @@ local start_type = function()
 
     if state.current_word >= state.words then
       state.current_word = 1
-      setup_type()
+
+      text = generate_random_text(state.words)
+      setup_type(text)
       return
     end
 
@@ -172,6 +189,8 @@ local start_type = function()
       state.streak
     )
     vim.api.nvim_buf_set_lines(questionnaire.state.window_style.footer.floating.buf, 0, -1, false, { footer })
+
+    setup_type(text)
   end, { buffer = questionnaire.state.window_style.answear.floating.buf })
 end
 
