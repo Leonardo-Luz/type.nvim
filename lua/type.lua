@@ -122,6 +122,7 @@ end
 local start_type = function()
   math.randomseed(os.time())
 
+  state.total_words = 1
   state.start_timer = os.time()
 
   questionnaire.state.title = "Type Test"
@@ -169,6 +170,9 @@ local start_type = function()
 
     if state.current_word >= state.words then
       state.current_word = 1
+
+      state.total_words = 1
+      state.start_timer = os.time()
 
       text = generate_random_text(state.words)
       setup_type(text)
