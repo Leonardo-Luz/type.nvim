@@ -1,4 +1,4 @@
-local questionnaire = require("templates.questionnaire")
+local floatwindow = require("floatwindow")
 
 local M = {}
 
@@ -14,6 +14,38 @@ local state = {
   end_timer = 0,
   wpm = 0,
   text_start = "",
+  window_config = {
+    background = {
+      floating = {
+        buf = -1,
+        win = -1,
+      },
+    },
+    header = {
+      floating = {
+        buf = -1,
+        win = -1,
+      },
+    },
+    challenge = {
+      floating = {
+        buf = -1,
+        win = -1,
+      },
+    },
+    input = {
+      floating = {
+        buf = -1,
+        win = -1,
+      },
+    },
+    footer = {
+      floating = {
+        buf = -1,
+        win = -1,
+      },
+    },
+  },
 }
 
 local random_words = {
@@ -69,6 +101,109 @@ local random_words = {
   "sleep",
 }
 
+local create_window_config = function()
+  local win_width = vim.o.columns
+  local win_height = vim.o.lines
+
+  local float_width = math.floor(win_width * 0.6)
+  local float_height = math.floor(win_height * 0.6)
+
+  local row = math.floor((win_height - float_height) / 2)
+  local col = math.floor((win_width - float_width) / 2)
+
+  local header_height = 2
+  local footer_height = 1
+  local challenge_height = math.floor((float_height - header_height - footer_height + 3) / 2)
+  local input_height = challenge_height - 5 - 1 - 3
+
+  return {
+    background = {
+      floating = {
+        buf = -1,
+        win = -1,
+      },
+      opts = {
+        relative = "editor",
+        style = "minimal",
+        zindex = 1,
+        width = float_width,
+        height = float_height,
+        col = col,
+        row = row,
+        border = "rounded",
+      },
+      enter = false,
+    },
+    header = {
+      floating = {
+        buf = -1,
+        win = -1,
+      },
+      opts = {
+        relative = "editor",
+        style = "minimal",
+        zindex = 4,
+        width = float_width - 2,
+        height = header_height,
+        col = col + 1,
+        row = row + 1,
+        border = { " ", " ", " ", " ", " ", " ", " ", " " },
+      },
+      enter = false,
+    },
+    challenge = {
+      floating = {
+        buf = -1,
+        win = -1,
+      },
+      opts = {
+        relative = "editor",
+        style = "minimal",
+        zindex = 3,
+        width = float_width - 24,
+        height = challenge_height - 2,
+        col = col + 9,
+        row = row + 4,
+        border = { " ", " ", " ", " ", " ", " ", " ", " " },
+      },
+      enter = false,
+    },
+    input = {
+      floating = {
+        buf = -1,
+        win = -1,
+      },
+      opts = {
+        relative = "editor",
+        style = "minimal",
+        zindex = 3,
+        width = float_width - 24,
+        height = input_height - 2,
+        col = col + 9,
+        row = row + challenge_height + 6,
+        border = { " ", " ", " ", " ", " ", " ", " ", "" },
+      },
+    },
+    footer = {
+      floating = {
+        buf = -1,
+        win = -1,
+      },
+      opts = {
+        relative = "editor",
+        style = "minimal",
+        zindex = 4,
+        width = float_width,
+        height = footer_height,
+        col = col + 1,
+        row = row + float_height,
+        border = "none",
+      },
+      enter = false,
+    },
+  }
+end
+
 local function generate_random_text(word_count)
   local text = {}
   state.text = {}
@@ -87,7 +222,7 @@ local function generate_random_text(word_count)
   return table.concat(text, "")
 end
 
-local setup_type = function(text)
+local set_content = function(text)
   local size = 0
   for i = 1, state.current_word do
     size = size + state.text[i]:len() + 1
@@ -111,12 +246,60 @@ local setup_type = function(text)
     state.streak
   )
 
-  vim.api.nvim_buf_set_lines(questionnaire.state.window_style.footer.floating.buf, 0, -1, false, { footer })
+  vim.api.nvim_buf_set_lines(state.window_config.footer.floating.buf, 0, -1, false, { footer })
 
-  vim.api.nvim_buf_set_lines(questionnaire.state.window_style.answear.floating.buf, 0, -1, true, {})
+  vim.api.nvim_buf_set_lines(state.window_config.input.floating.buf, 0, -1, true, {})
 
-  vim.api.nvim_buf_set_lines(questionnaire.state.window_style.question.floating.buf, 0, -1, true, {})
-  vim.api.nvim_buf_set_lines(questionnaire.state.window_style.question.floating.buf, 0, -1, true, lines)
+  vim.api.nvim_buf_set_lines(state.window_config.challenge.floating.buf, 0, -1, true, {})
+  vim.api.nvim_buf_set_lines(state.window_config.challenge.floating.buf, 0, -1, true, lines)
+end
+
+local foreach_float = function(callback)
+  for name, float in pairs(state.window_config) do
+    callback(name, float)
+  end
+end
+
+local exit_window = function()
+  foreach_float(function(_, float)
+    pcall(vim.api.nvim_win_close, float.floating.win, true)
+  end)
+end
+
+local create_remaps = function()
+  vim.keymap.set("n", "<ESC><ESC>", function()
+    vim.api.nvim_win_close(state.window_config.input.floating.win, true)
+  end, {
+    buffer = state.window_config.input.floating.buf,
+  })
+
+  vim.api.nvim_create_autocmd("BufLeave", {
+    buffer = state.window_config.input.floating.buf,
+    callback = function()
+      exit_window()
+    end,
+  })
+
+  vim.api.nvim_create_autocmd("VimResized", {
+    group = vim.api.nvim_create_augroup("present-resized", {}),
+    callback = function()
+      if
+        not vim.api.nvim_win_is_valid(state.window_config.input.floating.win)
+        or state.window_config.input.floating.win == nil
+      then
+        return
+      end
+
+      local updated = create_window_config()
+
+      foreach_float(function(name, float)
+        float.opts = updated[name].opts
+        vim.api.nvim_win_set_config(float.floating.win, updated[name].opts)
+      end)
+
+      set_content()
+    end,
+  })
 end
 
 local start_type = function()
@@ -125,13 +308,24 @@ local start_type = function()
   state.total_words = 1
   state.start_timer = os.time()
 
-  questionnaire.state.title = "Type Test"
-  questionnaire.window_setup()
+  state.window_config = create_window_config()
 
-  vim.bo[questionnaire.state.window_style.question.floating.buf].filetype = "markdown"
+  foreach_float(function(_, float)
+    float.floating = floatwindow.create_floating_window(float)
+  end)
+
+  local title_text = "Type Challenge"
+  local padding = string.rep(" ", (state.window_config.header.opts.width - #title_text) / 2)
+  local title = padding .. title_text
+
+  vim.api.nvim_buf_set_lines(state.window_config.header.floating.buf, 0, -1, false, { title })
+
+  vim.bo[state.window_config.challenge.floating.buf].filetype = "markdown"
 
   local text = generate_random_text(state.words)
-  setup_type(text)
+  set_content(text)
+
+  create_remaps()
 
   vim.keymap.set("n", "<bs>", function()
     if state.current_word > 1 then
@@ -145,13 +339,13 @@ local start_type = function()
         state.wrong_words,
         state.streak
       )
-      vim.api.nvim_buf_set_lines(questionnaire.state.window_style.footer.floating.buf, 0, -1, false, { footer })
-      setup_type(text)
+      vim.api.nvim_buf_set_lines(state.window_config.footer.floating.buf, 0, -1, false, { footer })
+      set_content(text)
     end
-  end, { buffer = questionnaire.state.window_style.answear.floating.buf })
+  end, { buffer = state.window_config.input.floating.buf })
 
   vim.keymap.set("i", "<space>", function()
-    local answear = vim.api.nvim_buf_get_lines(questionnaire.state.window_style.answear.floating.buf, 0, -1, true)
+    local answear = vim.api.nvim_buf_get_lines(state.window_config.input.floating.buf, 0, -1, true)
 
     local answear_word = answear[1]
     local target_word = state.text[state.current_word]
@@ -175,14 +369,14 @@ local start_type = function()
       state.start_timer = os.time()
 
       text = generate_random_text(state.words)
-      setup_type(text)
+      set_content(text)
       return
     end
 
     state.current_word = state.current_word + 1
     state.total_words = state.total_words + 1
 
-    vim.api.nvim_buf_set_lines(questionnaire.state.window_style.answear.floating.buf, 0, -1, true, {})
+    vim.api.nvim_buf_set_lines(state.window_config.input.floating.buf, 0, -1, true, {})
 
     local footer = string.format(
       "  current word: %s   |   wpm  %d   |   ✔ %d / ✘ %d   |   🔥  %d  ",
@@ -192,10 +386,10 @@ local start_type = function()
       state.wrong_words,
       state.streak
     )
-    vim.api.nvim_buf_set_lines(questionnaire.state.window_style.footer.floating.buf, 0, -1, false, { footer })
+    vim.api.nvim_buf_set_lines(state.window_config.footer.floating.buf, 0, -1, false, { footer })
 
-    setup_type(text)
-  end, { buffer = questionnaire.state.window_style.answear.floating.buf })
+    set_content(text)
+  end, { buffer = state.window_config.input.floating.buf })
 end
 
 vim.api.nvim_create_user_command("Type", function()
