@@ -305,6 +305,7 @@ end
 local start_type = function()
   math.randomseed(os.time())
 
+  state.current_word = 1
   state.total_words = 1
   state.start_timer = os.time()
 
