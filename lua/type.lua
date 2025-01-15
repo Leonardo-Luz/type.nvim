@@ -380,7 +380,7 @@ local start_type = function()
     vim.api.nvim_buf_set_lines(state.window_config.input.floating.buf, 0, -1, true, {})
 
     local footer = string.format(
-      "  current word: %s   |   wpm  %d   |   ✔ %d / ✘ %d   |   🔥  %d  ",
+      "  Current Word: %s   |   WPM:  %d   | Words Stats //  ✔ %d / ✘ %d / 🔥  %d  //",
       state.text[state.current_word],
       state.wpm,
       state.correct_words,
