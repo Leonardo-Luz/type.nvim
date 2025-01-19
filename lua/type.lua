@@ -391,7 +391,11 @@ local start_type = function()
 end
 
 vim.api.nvim_create_user_command("Type", function()
-  start_type()
+  if not vim.api.nvim_win_is_valid(state.window_config.input.floating.win) then
+    start_type()
+  else
+    vim.api.nvim_win_close(state.window_config.input.floating.win, true)
+  end
 end, {})
 
 ---@class setup.Opts
