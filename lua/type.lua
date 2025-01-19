@@ -160,10 +160,10 @@ local create_window_config = function()
         relative = "editor",
         style = "minimal",
         zindex = 3,
-        width = float_width - 24,
-        height = challenge_height - 2,
+        width = float_width - 20,
+        height = challenge_height - 1,
         col = col + 9,
-        row = row + 4,
+        row = row + 5,
         border = { " ", " ", " ", " ", " ", " ", " ", " " },
       },
       enter = false,
@@ -177,7 +177,7 @@ local create_window_config = function()
         relative = "editor",
         style = "minimal",
         zindex = 3,
-        width = float_width - 24,
+        width = float_width - 20,
         height = input_height - 2,
         col = col + 9,
         row = row + challenge_height + 6,
@@ -208,16 +208,12 @@ local function generate_random_text(word_count)
   local text = {}
   state.text = {}
 
-  for i = 1, word_count do
+  for _ = 1, word_count do
     local random_index = math.random(1, #random_words)
     table.insert(text, random_words[random_index])
     table.insert(state.text, random_words[random_index])
 
-    if i % 10 == 0 then
-      table.insert(text, "\n")
-    else
-      table.insert(text, " ")
-    end
+    table.insert(text, " ")
   end
   return table.concat(text, "")
 end
@@ -238,7 +234,7 @@ local set_content = function(text)
   local lines = vim.split(text, "\n")
 
   local footer = string.format(
-    "  current word: %s   |   wpm  %d   |   ✔ %d / ✘ %d   |   🔥  %d  ",
+    "  Current Word: %s   |   WPM:  %d   | Words Stats //  ✔ %d / ✘ %d / 🔥  %d",
     state.text[state.current_word],
     state.wpm,
     state.correct_words,
@@ -309,6 +305,8 @@ local start_type = function()
   state.total_words = 1
   state.start_timer = os.time()
 
+  local text = generate_random_text(state.words)
+
   state.window_config = create_window_config()
 
   foreach_float(function(_, float)
@@ -323,7 +321,6 @@ local start_type = function()
 
   vim.bo[state.window_config.challenge.floating.buf].filetype = "markdown"
 
-  local text = generate_random_text(state.words)
   set_content(text)
 
   create_remaps()
@@ -333,7 +330,7 @@ local start_type = function()
       state.current_word = state.current_word - 1
 
       local footer = string.format(
-        "  current word: %s   |   wpm  %d   |   ✔ %d / ✘ %d   |   🔥  %d  ",
+        "  Current Word: %s   |   WPM:  %d   | Words Stats //  ✔ %d / ✘ %d / 🔥  %d",
         state.text[state.current_word],
         state.wpm,
         state.correct_words,
@@ -380,7 +377,7 @@ local start_type = function()
     vim.api.nvim_buf_set_lines(state.window_config.input.floating.buf, 0, -1, true, {})
 
     local footer = string.format(
-      "  Current Word: %s   |   WPM:  %d   | Words Stats //  ✔ %d / ✘ %d / 🔥  %d  //",
+      "  Current Word: %s   |   WPM:  %d   | Words Stats //  ✔ %d / ✘ %d / 🔥  %d",
       state.text[state.current_word],
       state.wpm,
       state.correct_words,
