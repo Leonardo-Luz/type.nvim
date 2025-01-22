@@ -353,24 +353,7 @@ local start_type = function()
     end
   end, { buffer = state.window_config.input.floating.buf })
 
-  vim.keymap.set("n", "<bs>", function()
-    if state.current_word > 1 then
-      state.current_word = state.current_word - 1
-
-      local footer = string.format(
-        "  Current Word: %s   |   WPM:  %d   | Words Stats //  ✔ %d / ✘ %d / 🔥  %d",
-        state.text[state.current_word],
-        state.wpm,
-        state.correct_words,
-        state.wrong_words,
-        state.streak
-      )
-      vim.api.nvim_buf_set_lines(state.window_config.footer.floating.buf, 0, -1, false, { footer })
-      set_content(text)
-    end
-  end, { buffer = state.window_config.input.floating.buf })
-
-  vim.keymap.set("i", "<space>", function()
+  local function check_response()
     local answear = vim.api.nvim_buf_get_lines(state.window_config.input.floating.buf, 0, -1, true)
 
     local answear_word = answear[1]
@@ -431,7 +414,10 @@ local start_type = function()
     vim.api.nvim_buf_set_lines(state.window_config.footer.floating.buf, 0, -1, false, { footer })
 
     set_content(text)
-  end, { buffer = state.window_config.input.floating.buf })
+  end
+
+  vim.keymap.set("i", "<space>", check_response, { buffer = state.window_config.input.floating.buf })
+  vim.keymap.set("i", "<enter>", check_response, { buffer = state.window_config.input.floating.buf })
 end
 
 vim.api.nvim_create_user_command("Type", function()
