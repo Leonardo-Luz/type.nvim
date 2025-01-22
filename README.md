@@ -27,5 +27,5 @@
 **Usage:**
 
 * Start practicing with the command `:Type`.
-    * `<bs>`: Back over a word.
-    * `<space>`: Advance to the next word.
+    * insert mode, `<bs>`: Back over a word.
+    * insert mode, `<space>` or `enter`: Advance to the next word.
