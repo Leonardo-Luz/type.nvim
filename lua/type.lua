@@ -6,6 +6,7 @@ local state = {
   streak = 0,
   correct_words = 0,
   wrong_words = 0,
+  wrong_count = 0,
   current_word = 1, -- All words
   total_words = 1, -- All words
   words = 20, -- All words
@@ -303,6 +304,7 @@ local start_type = function()
 
   state.current_word = 1
   state.total_words = 1
+  state.wrong_count = 0
   state.start_timer = os.time()
 
   local text = generate_random_text(state.words)
@@ -324,6 +326,32 @@ local start_type = function()
   set_content(text)
 
   create_remaps()
+
+  vim.keymap.set("i", "<bs>", function()
+    local buf = state.window_config.input.floating.buf
+    local line_count = vim.api.nvim_buf_line_count(buf)
+    local is_empty = line_count == 1 and vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] == ""
+
+    if is_empty and state.current_word > 1 then
+      state.current_word = state.current_word - 1
+      local footer = string.format(
+        "Current Word: %s | WPM: %d | Words Stats // ✔ %d / ✘ %d / 🔥 %d",
+        state.text[state.current_word],
+        state.wpm,
+        state.correct_words,
+        state.wrong_words,
+        state.streak
+      )
+      vim.api.nvim_buf_set_lines(state.window_config.footer.floating.buf, 0, -1, false, { footer })
+      set_content(text)
+    else
+      local current_pos = vim.api.nvim_win_get_cursor(0)
+      if current_pos[1] > 0 and not is_empty then
+        vim.api.nvim_buf_set_text(buf, current_pos[1] - 1, current_pos[2] - 1, current_pos[1] - 1, current_pos[2], {})
+        vim.api.nvim_win_set_cursor(0, { current_pos[1], current_pos[2] - 1 })
+      end
+    end
+  end, { buffer = state.window_config.input.floating.buf })
 
   vim.keymap.set("n", "<bs>", function()
     if state.current_word > 1 then
@@ -350,7 +378,22 @@ local start_type = function()
 
     state.end_timer = os.time()
 
-    state.wpm = state.total_words / (state.end_timer - state.start_timer) * 60
+    local diffCount = 0
+    local len = math.min(#answear_word, #target_word)
+    for i = 1, len do
+      if answear_word:sub(i, i) ~= target_word:sub(i, i) then
+        diffCount = diffCount + 1
+      end
+    end
+    diffCount = diffCount + math.abs(#answear_word - #target_word)
+
+    state.wrong_count = state.wrong_count + diffCount
+
+    state.wpm = (state.total_words / (state.end_timer - state.start_timer) * 60) - state.wrong_count
+
+    if state.wpm < 0 then
+      state.wpm = 0
+    end
 
     if answear_word == target_word then
       state.streak = state.streak + 1
@@ -362,6 +405,7 @@ local start_type = function()
 
     if state.current_word >= state.words then
       state.current_word = 1
+      state.wrong_count = 0
 
       state.total_words = 1
       state.start_timer = os.time()
