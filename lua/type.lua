@@ -7,9 +7,9 @@ local state = {
   correct_words = 0,
   wrong_words = 0,
   wrong_count = 0,
-  current_word = 1, -- All words
-  total_words = 1, -- All words
-  words = 20, -- All words
+  current_word = 1,
+  total_words = 1,
+  words = 20,
   text = {},
   start_timer = 0,
   end_timer = 0,
@@ -418,6 +418,21 @@ local start_type = function()
 
   vim.keymap.set("i", "<space>", check_response, { buffer = state.window_config.input.floating.buf })
   vim.keymap.set("i", "<enter>", check_response, { buffer = state.window_config.input.floating.buf })
+  vim.keymap.set("n", "<leader>r", function()
+    state.current_word = 1
+    state.wrong_count = 0
+    state.total_words = 1
+    state.correct_words = 0
+    state.wrong_words = 0
+    state.streak = 0
+    state.wpm = 0
+
+    state.total_words = 1
+    state.start_timer = os.time()
+
+    text = generate_random_text(state.words)
+    set_content(text)
+  end, { buffer = state.window_config.input.floating.buf })
 end
 
 vim.api.nvim_create_user_command("Type", function()

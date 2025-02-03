@@ -29,3 +29,4 @@
 * Start practicing with the command `:Type`.
     * insert mode, `<bs>`: Back over a word.
     * insert mode, `<space>` or `enter`: Advance to the next word.
+    * normal mode, `<leader>r`: Reset
