@@ -1,8 +1,11 @@
 local floatwindow = require("floatwindow")
 
+local Path = require("plenary.path")
+
 local M = {}
 
 local state = {
+  data_file = Path:new(vim.fn.stdpath("config") .. "/json", "words.json"),
   streak = 0,
   correct_words = 0,
   wrong_words = 0,
@@ -54,10 +57,8 @@ local random_words = {
   "banana",
   "cherry",
   "date",
-  "elderberry",
   "fig",
   "grape",
-  "honeydew",
   "kiwi",
   "lemon",
   "mango",
@@ -115,7 +116,6 @@ local create_window_config = function()
   local header_height = 2
   local footer_height = 1
   local challenge_height = math.floor((float_height - header_height - footer_height + 3) / 2)
-  local input_height = challenge_height - 5 - 1 - 3
 
   return {
     background = {
@@ -179,7 +179,7 @@ local create_window_config = function()
         style = "minimal",
         zindex = 3,
         width = float_width - 20,
-        height = input_height - 2,
+        height = 1,
         col = col + 9,
         row = row + challenge_height + 6,
         border = { " ", " ", " ", " ", " ", " ", " ", "" },
@@ -205,7 +205,22 @@ local create_window_config = function()
   }
 end
 
+local function read_data()
+  if state.data_file:exists() then
+    local file_content = state.data_file:read()
+    return vim.json.decode(file_content)
+  else
+    return {}
+  end
+end
+
 local function generate_random_text(word_count)
+  local data = read_data()
+
+  if #data > 0 then
+    random_words = data
+  end
+
   local text = {}
   state.text = {}
 
@@ -281,8 +296,8 @@ local create_remaps = function()
     group = vim.api.nvim_create_augroup("present-resized", {}),
     callback = function()
       if
-        not vim.api.nvim_win_is_valid(state.window_config.input.floating.win)
-        or state.window_config.input.floating.win == nil
+          not vim.api.nvim_win_is_valid(state.window_config.input.floating.win)
+          or state.window_config.input.floating.win == nil
       then
         return
       end
@@ -313,15 +328,15 @@ local start_type = function()
 
   foreach_float(function(_, float)
     float.floating = floatwindow.create_floating_window(float)
+    vim.bo[float.floating.buf].filetype = "markdown"
   end)
 
-  local title_text = "Type Challenge"
-  local padding = string.rep(" ", (state.window_config.header.opts.width - #title_text) / 2)
+  local title_text = "`Type Challenge`"
+  local padding = "#" .. string.rep(" ", (state.window_config.header.opts.width - #title_text - 1) / 2)
   local title = padding .. title_text
 
   vim.api.nvim_buf_set_lines(state.window_config.header.floating.buf, 0, -1, false, { title })
 
-  vim.bo[state.window_config.challenge.floating.buf].filetype = "markdown"
 
   set_content(text)
 
