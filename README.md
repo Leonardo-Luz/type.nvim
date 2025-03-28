@@ -9,7 +9,8 @@
 
 ## **Dependencies:**
 
-* `leonardo-luz/floatwindow`
+* `leonardo-luz/floatwindow.nvim`
+* `nvim-lua/plenary.nvim`
 
 ## **Installation:**  Add `leonardo-luz/type.nvim` to your Neovim plugin manager (e.g., `init.lua` or `plugins/type.lua`).
 
